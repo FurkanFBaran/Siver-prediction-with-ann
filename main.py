@@ -123,51 +123,51 @@ def tahmin_yap(fiyat1, fiyat2, fiyat3, fiyat4, fiyat5):
         pred = model(torch.FloatTensor(scaled_reshaped))
         result = scaler_y.inverse_transform(pred.numpy())[0][0]
         
-        print(f"Tahmin: ${result:.2f}")
+        
         return result
 
-# Tahmin yap
+
 print("\n" + "="*50)
-print("MANUEL TAHMİN")
+print("MANUAL PREDICTION")
 print("="*50)
 
 variba = tahmin_yap(36.58300, 40.59200, 47.38725, 48.65540, 56.92940)
-print(f"Tahmin edilen değer: ${variba:.2f}")
-print(f"Gerçek değer: $58.35")
-print(f"Mutlak hata: ${np.abs(variba - 58.35):.2f}")
+print(f"Predicted value: ${variba:.2f}")
+print(f"Actual value: $58.35")
+print(f"Absolute error: ${np.abs(variba - 58.35):.2f}")
 print("="*50)
 
 
 variba = tahmin_yap(32.391998291015625,32.03200149536133,34.15800094604492,32.18899917602539,34.5629997253418)
-print(f"Tahmin edilen değer: ${variba:.2f}")
-print(f"Gerçek değer: $36.78")
-print(f"Mutlak hata: ${np.abs(variba - 36.7869987487793):.2f}")
+print(f"Predicted value: ${variba:.2f}")
+print(f"Actual value: $36.78")
+print(f"Absolute error: ${np.abs(variba - 36.7869987487793):.2f}")
 print("="*50)
 
 variba = tahmin_yap(32.03200149536133,34.15800094604492,32.18899917602539,34.5629997253418,36.082000732421875)
-print(f"Tahmin edilen değer: ${variba:.2f}")
-print(f"Gerçek değer: $41.07")
-print(f"Mutlak hata: ${np.abs(variba - 41.07099914550781):.2f}")
+print(f"Predicted value: ${variba:.2f}")
+print(f"Actual value: $41.07")
+print(f"Absolute error: ${np.abs(variba - 41.07099914550781):.2f}")
 print("="*50)
 
 variba = tahmin_yap(34.15800094604492,32.18899917602539,34.5629997253418,36.082000732421875,36.7869987487793)
-print(f"Tahmin edilen değer: ${variba:.2f}")
-print(f"Gerçek değer: $47.29")
-print(f"Mutlak hata: ${np.abs(variba - 47.290000915527344):.2f}")
+print(f"Predicted value: ${variba:.2f}")
+print(f"Actual value: $47.29")
+print(f"Absolute error: ${np.abs(variba - 47.290000915527344):.2f}")
 print("="*50)
 
 variba = tahmin_yap(32.18899917602539,34.5629997253418,36.082000732421875,36.7869987487793,41.07099914550781)
-print(f"Tahmin edilen değer: ${variba:.2f}")
-print(f"Gerçek değer: $ 47.88")
-print(f"Mutlak hata: ${np.abs(variba - 47.88800048828125):.2f}")
+print(f"Predicted value: ${variba:.2f}")
+print(f"Actual value: $ 47.88")
+print(f"Absolute error: ${np.abs(variba - 47.88800048828125):.2f}")
 print("="*50)
 
 variba = tahmin_yap(17.85, 16.67, 13.97, 14.96, 17.87)
-print(f"Tahmin edilen değer: ${variba:.2f}")
-print(f"Gerçek değer: $18.18)")
-print(f"Mutlak hata: ${np.abs(variba - 18.18):.2f}")
+print(f"Predicted value: ${variba:.2f}")
+print(f"Actual value: $18.18)")
+print(f"Absolute error: ${np.abs(variba - 18.18):.2f}")
 print("="*50)
 
 
 torch.save(model.state_dict(), 'silver_lstm_model.pth')
-print("\nLSTM Model kaydedildi!")
+print("\nLSTM Model saved!")

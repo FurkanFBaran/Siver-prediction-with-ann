@@ -5,58 +5,60 @@ import torch.optim as optim
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import numpy as np
-import pywt  # Wavelet için
+import pywt
+import matplotlib
+matplotlib.use('Agg')  # Bunu ekle
 import matplotlib.pyplot as plt
 
-# --- Wavelet Ayrıştırma Fonksiyonu ---
+# --- Wavelet Decomposition Function ---
 def wavelet_decompose(data, wavelet='db4', level=2):
     """
-    Veriyi wavelet ile ayrıştırır
-    level=2: sadece 2 seviye (a2, d2, d1) - 60 aylık veri için uygun
+    Decomposes data with wavelet
+    level=2: only 2 levels (a2, d2, d1) - suitable for 60 months data
     """
     coeffs = pywt.wavedec(data, wavelet, level=level)
-    return coeffs  # [a2, d2, d1] formatında döner
+    return coeffs  # Returns in [a2, d2, d1] format
 
 def wavelet_reconstruct(coeffs, wavelet='db4'):
     """
-    Wavelet bileşenlerini tekrar birleştirir
+    Reconstructs wavelet components
     """
     return pywt.waverec(coeffs, wavelet)
 
 def denoise_signal(data, wavelet='db4', level=2):
     """
-    Gürültüyü temizler: d1'i sıfırlayarak
+    Cleans noise: by zeroing d1
     """
     coeffs = pywt.wavedec(data, wavelet, level=level)
-    # d1 (en yüksek frekanslı gürültü) sıfırla
+    # Zero d1 (highest frequency noise)
     coeffs[-1] = np.zeros_like(coeffs[-1])
-    # Geri birleştir
+    # Reconstruct
     denoised = pywt.waverec(coeffs, wavelet)
-    return denoised[:len(data)]  # Orijinal uzunlukta döndür
+    return denoised[:len(data)]  # Return in original length
 
 def plot_wavelet_decomposition(prices, wavelet='db4', level=2):
     """
-    Wavelet ayrıştırmasını görselleştirir (a1, a2, d1, d2 grafikleri)
+    Visualizes wavelet decomposition (a1, a2, d1, d2 graphs)
     """
-    # Wavelet ayrıştırma
+    # Wavelet decomposition
     coeffs = pywt.wavedec(prices, wavelet, level=level)
     
-    # Grafik sayısını hesapla
-    n_plots = 1 + len(coeffs)  # Orijinal + tüm bileşenler
+    # Calculate number of plots
+    n_plots = 1 + len(coeffs)  # Original + all components
     
-    # Büyük bir figure oluştur
+    # Create large figure
     fig, axes = plt.subplots(n_plots, 1, figsize=(14, 3*n_plots))
-    fig.suptitle('Wavelet Ayrıştırma Analizi (Daubechies-4)', 
+    fig.suptitle('Wavelet Decomposition Analysis (Daubechies-4)', 
                  fontsize=16, fontweight='bold', y=0.995)
     
-    # Orijinal sinyal
-    axes[0].plot(prices, 'b-', linewidth=2, label='Orijinal Sinyal')
-    axes[0].set_title('Orijinal Gümüş Fiyatları', fontsize=12, fontweight='bold')
-    axes[0].set_ylabel('Fiyat ($)', fontsize=10)
+    # Original signal
+    axes[0].plot(prices, 'b-', linewidth=2, label='Original Signal')
+    axes[0].set_title('Original Silver Prices', fontsize=12, fontweight='bold')
+    axes[0].set_ylabel('Price ($)', fontsize=10)
     axes[0].grid(True, alpha=0.3)
     axes[0].legend(loc='upper left')
     
-    # Approximation ve Detail bileşenleri
+    # Approximation and Detail components
     labels = [f'a{level}'] + [f'd{level-i}' for i in range(level)]
     colors = ['green'] + ['red'] * level
     
@@ -64,17 +66,17 @@ def plot_wavelet_decomposition(prices, wavelet='db4', level=2):
         axes[idx].plot(coeff, color=color, linewidth=2, label=label)
         
         if label.startswith('a'):
-            axes[idx].set_title(f'{label} - Approximation (Yaklaşım/Trend)', 
+            axes[idx].set_title(f'{label} - Approximation (Trend)', 
                                fontsize=12, fontweight='bold')
-            axes[idx].set_ylabel('Değer', fontsize=10)
+            axes[idx].set_ylabel('Value', fontsize=10)
         else:
-            axes[idx].set_title(f'{label} - Detail (Detay/Dalgalanma)', 
+            axes[idx].set_title(f'{label} - Detail (Fluctuation)', 
                                fontsize=12, fontweight='bold')
-            axes[idx].set_ylabel('Değer', fontsize=10)
+            axes[idx].set_ylabel('Value', fontsize=10)
             
-            # d1 için özel not
+            # Special note for d1
             if label == 'd1':
-                axes[idx].text(0.02, 0.95, '⚠️ Bu bileşen atılıyor (gürültü)', 
+                axes[idx].text(0.02, 0.95, '⚠️ This component is discarded (noise)', 
                              transform=axes[idx].transAxes, fontsize=9,
                              bbox=dict(boxstyle='round', facecolor='yellow', alpha=0.3),
                              verticalalignment='top')
@@ -83,38 +85,38 @@ def plot_wavelet_decomposition(prices, wavelet='db4', level=2):
         axes[idx].legend(loc='upper left')
         axes[idx].axhline(y=0, color='gray', linestyle='--', alpha=0.5)
     
-    axes[-1].set_xlabel('İndeks', fontsize=10)
+    axes[-1].set_xlabel('Index', fontsize=10)
     
     plt.tight_layout()
     plt.savefig('wavelet_decomposition.png', dpi=150, bbox_inches='tight')
-    print("\n✓ Wavelet ayrıştırma grafiği kaydedildi: wavelet_decomposition.png")
+    print("\n✓ Wavelet decomposition graph saved: wavelet_decomposition.png")
     plt.show()
     
     return coeffs
 
-# --- Veriyi yükle ---
+# --- Load data ---
 df = pd.read_csv("silver_last_60_months_fixed.csv")
 prices = df['Price'].values
 
 print("="*60)
-print("WAVELET-LSTM HİBRİT MODEL")
+print("WAVELET-LSTM HYBRID MODEL")
 print("="*60)
-print(f"Toplam veri: {len(prices)} ay")
+print(f"Total data: {len(prices)} months")
 
-# --- Wavelet grafiklerini çiz ---
+# --- Draw wavelet graphs ---
 print("\n" + "="*60)
-print("WAVELET AYRIŞTIRMA GRAFİKLERİ")
+print("WAVELET DECOMPOSITION GRAPHS")
 print("="*60)
 wavelet_coeffs = plot_wavelet_decomposition(prices, wavelet='db4', level=2)
 
-# --- Wavelet ile gürültü temizleme ---
-print("\nWavelet ile gürültü temizleniyor...")
+# --- Noise cleaning with Wavelet ---
+print("\nCleaning noise with Wavelet...")
 denoised_prices = denoise_signal(prices, wavelet='db4', level=2)
 
-print(f"Orijinal fiyat ortalaması: ${prices.mean():.2f}")
-print(f"Temizlenmiş fiyat ortalaması: ${denoised_prices.mean():.2f}")
+print(f"Original price average: ${prices.mean():.2f}")
+print(f"Denoised price average: ${denoised_prices.mean():.2f}")
 
-# --- Lag features oluştur (temizlenmiş veri ile) ---
+# --- Create lag features (with denoised data) ---
 def create_lag_features(data, n_lags=5):
     X, y = [], []
     for i in range(n_lags, len(data)):
@@ -125,9 +127,9 @@ def create_lag_features(data, n_lags=5):
 X, y = create_lag_features(denoised_prices, n_lags=5)
 y = y.reshape(-1, 1)
 
-print(f"\nLag features oluşturuldu: {X.shape[0]} örneklem")
+print(f"\nLag features created: {X.shape[0]} samples")
 
-# --- Veriyi normalize et ---
+# --- Normalize data ---
 scaler_X = StandardScaler()
 scaler_y = StandardScaler()
 
@@ -139,20 +141,20 @@ X_train, X_test, y_train, y_test = train_test_split(
     X_scaled, y_scaled, test_size=0.2, random_state=42, shuffle=False
 )
 
-# LSTM için reshape: (batch_size, sequence_length, features)
+# Reshape for LSTM: (batch_size, sequence_length, features)
 X_train_reshaped = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
 X_test_reshaped = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
 
-# Torch tensorlara çevir
+# Convert to Torch tensors
 X_train_tensor = torch.FloatTensor(X_train_reshaped)
 y_train_tensor = torch.FloatTensor(y_train)
 X_test_tensor = torch.FloatTensor(X_test_reshaped)
 y_test_tensor = torch.FloatTensor(y_test)
 
-print(f"Train set: {X_train.shape[0]} örneklem")
-print(f"Test set: {X_test.shape[0]} örneklem")
+print(f"Train set: {X_train.shape[0]} samples")
+print(f"Test set: {X_test.shape[0]} samples")
 
-# --- LSTM Modeli (aynı mimari) ---
+# --- LSTM Model (same architecture) ---
 class WaveletLSTM(nn.Module):
     def __init__(self, input_size=1, hidden_size=64, num_layers=2):
         super(WaveletLSTM, self).__init__()
@@ -180,17 +182,17 @@ class WaveletLSTM(nn.Module):
         
         return out
 
-# Model oluştur
+# Create model
 model = WaveletLSTM()
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-# --- Eğitim ---
+# --- Training ---
 epochs = 2000
 losses = []
 
 print("\n" + "="*60)
-print("WAVELET-LSTM EĞİTİMİ BAŞLIYOR...")
+print("WAVELET-LSTM TRAINING STARTING...")
 print("="*60)
 
 for epoch in range(epochs):
@@ -210,7 +212,7 @@ for epoch in range(epochs):
 
 # --- Test ---
 print("\n" + "="*60)
-print("TEST SONUÇLARI")
+print("TEST RESULTS")
 print("="*60)
 
 model.eval()
@@ -230,83 +232,83 @@ with torch.no_grad():
     print(f'Root Mean Squared Error (RMSE): ${rmse:.2f}')
     print(f'Mean Absolute Percentage Error (MAPE): {mape:.2f}%')
     
-    print("\nİlk 10 Tahmin:")
+    print("\nFirst 10 Predictions:")
     print("-" * 60)
     for i in range(min(10, len(y_test_actual))):
         error = y_pred[i][0] - y_test_actual[i][0]
         error_pct = (error / y_test_actual[i][0]) * 100
-        print(f"Gerçek: ${y_test_actual[i][0]:6.2f} | Tahmin: ${y_pred[i][0]:6.2f} | "
-              f"Hata: ${error:+6.2f} ({error_pct:+5.2f}%)")
+        print(f"Actual: ${y_test_actual[i][0]:6.2f} | Prediction: ${y_pred[i][0]:6.2f} | "
+              f"Error: ${error:+6.2f} ({error_pct:+5.2f}%)")
 
-# --- TAHMİN FONKSİYONU ---
+# --- PREDICTION FUNCTION ---
 def tahmin_yap_wavelet(fiyat1, fiyat2, fiyat3, fiyat4, fiyat5):
     """
-    5 aylık fiyat verisi ile tahmin yapar
-    NOT: Bu fiyatlar temizlenmiş veriden gelmeli!
+    Predicts with 5 months price data
+    NOTE: These prices should come from denoised data!
     """
     model.eval()
     with torch.no_grad():
-        # Normalize et
+        # Normalize
         scaled = scaler_X.transform([[fiyat1, fiyat2, fiyat3, fiyat4, fiyat5]])
         
-        # LSTM için 3D'ye çevir
+        # Convert to 3D for LSTM
         scaled_reshaped = scaled.reshape(1, 5, 1)
         
-        # Tahmin yap
+        # Make prediction
         pred = model(torch.FloatTensor(scaled_reshaped))
         result = scaler_y.inverse_transform(pred.numpy())[0][0]
         
         return result
 
-# --- Model kaydet ---
+# --- Save model ---
 torch.save(model.state_dict(), 'silver_wavelet_lstm_model.pth')
 print("\n" + "="*60)
-print("WAVELET-LSTM MODEL KAYDEDİLDİ!")
+print("WAVELET-LSTM MODEL SAVED!")
 print("="*60)
 
-# --- Orijinal vs Temizlenmiş veri karşılaştırması ---
+# --- Original vs Denoised data comparison ---
 def plot_original_vs_denoised(original, denoised):
     """
-    Orijinal ve temizlenmiş veriyi karşılaştırır
+    Compares original and denoised data
     """
     fig, axes = plt.subplots(2, 1, figsize=(14, 8))
     
-    # İki veri birlikte
-    axes[0].plot(original, 'b-', label='Orijinal Veri', linewidth=2, alpha=0.7)
-    axes[0].plot(denoised, 'r-', label='Temizlenmiş Veri (d1 atıldı)', linewidth=2)
-    axes[0].set_title('Orijinal vs Temizlenmiş Gümüş Fiyatları', fontsize=14, fontweight='bold')
-    axes[0].set_ylabel('Fiyat ($)', fontsize=11)
+    # Both data together
+    axes[0].plot(original, 'b-', label='Original Data', linewidth=2, alpha=0.7)
+    axes[0].plot(denoised, 'r-', label='Denoised Data (d1 discarded)', linewidth=2)
+    axes[0].set_title('Original vs Denoised Silver Prices', fontsize=14, fontweight='bold')
+    axes[0].set_ylabel('Price ($)', fontsize=11)
     axes[0].legend(loc='best', fontsize=10)
     axes[0].grid(True, alpha=0.3)
     
-    # Fark (gürültü)
+    # Difference (noise)
     noise = original - denoised[:len(original)]
-    axes[1].plot(noise, 'purple', linewidth=1.5, label='Atılan Gürültü (d1)')
+    axes[1].plot(noise, 'purple', linewidth=1.5, label='Discarded Noise (d1)')
     axes[1].axhline(y=0, color='black', linestyle='--', linewidth=1)
-    axes[1].set_title('Temizlenen Gürültü Bileşeni', fontsize=14, fontweight='bold')
-    axes[1].set_xlabel('Ay', fontsize=11)
-    axes[1].set_ylabel('Gürültü ($)', fontsize=11)
+    axes[1].set_title('Cleaned Noise Component', fontsize=14, fontweight='bold')
+    axes[1].set_xlabel('Month', fontsize=11)
+    axes[1].set_ylabel('Noise ($)', fontsize=11)
     axes[1].legend(loc='best', fontsize=10)
     axes[1].grid(True, alpha=0.3)
     
     plt.tight_layout()
     plt.savefig('wavelet_denoising.png', dpi=150, bbox_inches='tight')
-    print("\n✓ Gürültü temizleme grafiği kaydedildi: wavelet_denoising.png")
+    print("\n✓ Noise cleaning graph saved: wavelet_denoising.png")
     plt.show()
 
 print("\n" + "="*60)
-print("ORİJİNAL vs TEMİZLENMİŞ VERİ KARŞILAŞTIRMASI")
+print("ORIGINAL vs DENOISED DATA COMPARISON")
 print("="*60)
 plot_original_vs_denoised(prices, denoised_prices)
 
-# --- Karşılaştırma bilgisi ---
+# --- Comparison information ---
 print("\n" + "="*60)
-print("WAVELET AVANTAJLARI")
+print("WAVELET ADVANTAGES")
 print("="*60)
-print("✓ Gürültü temizlendi (d1 bileşeni kaldırıldı)")
-print("✓ Trend daha net görünüyor")
-print("✓ Model daha stabil öğreniyor")
-print("✓ Overfitting riski azaldı")
-print("\nNOT: Bu modeli eski modelinizle (main.py) karşılaştırın!")
-print("     Test MAE değerlerini karşılaştırarak hangisi daha iyi görebilirsiniz.")
+print("✓ Noise cleaned (d1 component removed)")
+print("✓ Trend appears clearer")
+print("✓ Model learns more stably")
+print("✓ Overfitting risk reduced")
+print("\nNOTE: Compare this model with your old model (main.py)!")
+print("     You can see which one is better by comparing Test MAE values.")
 print("="*60)
